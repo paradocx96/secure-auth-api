@@ -20,64 +20,55 @@ import com.ssd.security.jwt.AuthEntryPointJwt;
 import com.ssd.security.jwt.AuthTokenFilter;
 
 
-
 @Configuration
 @EnableWebSecurity
 @EnableGlobalMethodSecurity(prePostEnabled = true)
 public class WebSecurityConfig extends WebSecurityConfigurerAdapter {
 
-	@Autowired
-	UserDetailsServiceImpl userDetailsServiceImpl;
+    @Autowired
+    UserDetailsServiceImpl userDetailsServiceImpl;
 
-	@Autowired
-	AuthEntryPointJwt unauthorizedHandler;
+    @Autowired
+    AuthEntryPointJwt unauthorizedHandler;
 
-	//Return new Authentication token
-	@Bean
-	public AuthTokenFilter authenticationJwtTokenFilter() {
-		return new AuthTokenFilter();
-	}
+    //Return new Authentication token
+    @Bean
+    public AuthTokenFilter authenticationJwtTokenFilter() {
+        return new AuthTokenFilter();
+    }
 
-	//Using Authentication Manager Builder, pass user details to builder
-	@Override
-	public void configure(AuthenticationManagerBuilder authenticationManagerBuilder) throws Exception {
-		authenticationManagerBuilder.userDetailsService(userDetailsServiceImpl).passwordEncoder(passwordEncoder());
-	}
+    //Using Authentication Manager Builder, pass user details to builder
+    @Override
+    public void configure(AuthenticationManagerBuilder authenticationManagerBuilder) throws Exception {
+        authenticationManagerBuilder.userDetailsService(userDetailsServiceImpl).passwordEncoder(passwordEncoder());
+    }
 
-	//Return authentication Manager Bean and call parent class method
-	@Bean
-	@Override
-	public AuthenticationManager authenticationManagerBean() throws Exception {
-		return super.authenticationManagerBean();
-	}
+    //Return authentication Manager Bean and call parent class method
+    @Bean
+    @Override
+    public AuthenticationManager authenticationManagerBean() throws Exception {
+        return super.authenticationManagerBean();
+    }
 
-	//Created for Password Encode
-	@Bean
-	public PasswordEncoder passwordEncoder() {
-		return new BCryptPasswordEncoder();
-	}
+    //Created for Password Encode
+    @Bean
+    public PasswordEncoder passwordEncoder() {
+        return new BCryptPasswordEncoder();
+    }
 
-	//set all backEnd URI to access accordingly
-	@Override
-	protected void configure(HttpSecurity http) throws Exception {
-		http.cors().and().csrf().disable()
-			.exceptionHandling().authenticationEntryPoint(unauthorizedHandler).and()
-			.sessionManagement().sessionCreationPolicy(SessionCreationPolicy.STATELESS).and()
-			.authorizeRequests()
+    //set all backEnd URI to access accordingly
+    @Override
+    protected void configure(HttpSecurity http) throws Exception {
+        http.cors().and().csrf().disable().exceptionHandling().authenticationEntryPoint(unauthorizedHandler).and().sessionManagement().sessionCreationPolicy(SessionCreationPolicy.STATELESS).and().authorizeRequests()
 
-			//All Permit Access Control
-			.antMatchers("/api/auth/sign-up").permitAll()
-			.antMatchers("/api/auth/sign-in").permitAll()
+                //All Permit Access Control
+                .antMatchers("/api/auth/sign-up").permitAll()
+                .antMatchers("/api/auth/sign-in").permitAll()
 
-			//View All User Details Access Control
-			.antMatchers("/api/auth/get-all-users").hasRole("ADMIN")
-			
-			.antMatchers("/api/product/seller/**").permitAll()
-			.antMatchers("/api/product/buyer/**").permitAll()
+                //View All User Details Access Control
+                .antMatchers("/api/auth/get-all-users").hasRole("ADMIN")
 
-			.anyRequest().authenticated();
-
-
-		http.addFilterBefore(authenticationJwtTokenFilter(), UsernamePasswordAuthenticationFilter.class);
-	}
+                .anyRequest().authenticated();
+        http.addFilterBefore(authenticationJwtTokenFilter(), UsernamePasswordAuthenticationFilter.class);
+    }
 }

@@ -2,7 +2,6 @@ package com.ssd.dto;
 
 import java.util.Set;
 
-//created for get frontEnd user registration details 
 public class UserRegisterDto {
  
     private String username;
