@@ -27,19 +27,19 @@ public class UserEndpoint {
     @Autowired
     UserApi userApi;
 
-    @PostMapping("/sign-up")
+    @PostMapping("/register")
     public ResponseEntity<?> userRegister(@Valid @RequestBody UserRegisterDto userRegister) {
         return userApi.register(userRegister);
     }
 
 
-    @PostMapping("/sign-in")
+    @PostMapping("/login")
     public ResponseEntity<?> userLogin(@Valid @RequestBody UserLoginDto userLogin) {
         return userApi.login(userLogin);
 
     }
 
-    @GetMapping("/get-all-users")
+    @GetMapping("/users")
     public List<User> getAllUser() {
         return userApi.getAll();
     }

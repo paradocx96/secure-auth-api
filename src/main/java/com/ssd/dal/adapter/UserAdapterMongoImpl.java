@@ -98,9 +98,9 @@ public class UserAdapterMongoImpl {
         // New User Object
         User user = new User(
                 userRegister.getUsername(),
-                userRegister.getEmail(),
                 userRegister.getContactNo(),
                 passwordEncoder.encode(userRegister.getPassword()),
+                userRegister.getEmail(),
                 userRegister.getUserType());
 
         // Hashset for user Roles
