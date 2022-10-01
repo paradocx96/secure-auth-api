@@ -1,7 +1,6 @@
 package com.ssd.dto;
 
 public class MessageRegisterDto {
-
     private String username;
     private String email;
     private String contactNo;

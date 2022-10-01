@@ -1,9 +1,14 @@
 package com.ssd.dal.adapter;
 
-import com.ssd.dal.model.*;
-import com.ssd.dal.repo.RoleMongoRepository;
-import com.ssd.dal.repo.UserMongoRepository;
-import com.ssd.dto.*;
+import com.ssd.dal.model.ERole;
+import com.ssd.dal.model.Role;
+import com.ssd.dal.model.User;
+import com.ssd.dal.repository.RoleMongoRepository;
+import com.ssd.dal.repository.UserMongoRepository;
+import com.ssd.dto.JwtResponseDto;
+import com.ssd.dto.MessageResponseDto;
+import com.ssd.dto.UserLoginDto;
+import com.ssd.dto.UserRegisterDto;
 import com.ssd.security.jwt.JwtUtils;
 
 import org.springframework.beans.factory.annotation.Autowired;
@@ -13,6 +18,7 @@ import org.springframework.security.authentication.UsernamePasswordAuthenticatio
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.security.crypto.password.PasswordEncoder;
+import org.springframework.stereotype.Component;
 import org.springframework.web.bind.annotation.RequestBody;
 
 import javax.validation.Valid;
@@ -22,14 +28,15 @@ import java.util.List;
 import java.util.Set;
 import java.util.stream.Collectors;
 
+@Component
 public class UserAdapterMongoImpl {
 
-    private final UserMongoRepository userRepository;
-    private final RoleMongoRepository roleRepository;
-    private final PasswordEncoder passwordEncoder;
-    private final AuthenticationManager authenticationManager;
-    private final JwtUtils jwtUtils;
-    private final UserDetailsServiceImpl userDetailsServiceImpl;
+    UserMongoRepository userRepository;
+    RoleMongoRepository roleRepository;
+    PasswordEncoder passwordEncoder;
+    AuthenticationManager authenticationManager;
+    JwtUtils jwtUtils;
+    UserDetailsServiceImpl userDetailsServiceImpl;
 
     @Autowired
     public UserAdapterMongoImpl(UserMongoRepository userRepository, RoleMongoRepository roleRepository, PasswordEncoder passwordEncoder, AuthenticationManager authenticationManager, JwtUtils jwtUtils, UserDetailsServiceImpl userDetailsServiceImpl) {
@@ -41,42 +48,16 @@ public class UserAdapterMongoImpl {
         this.userDetailsServiceImpl = userDetailsServiceImpl;
     }
 
-    // User registration method
-    public ResponseEntity<?> registerUser(@Valid @RequestBody UserRegisterDto userRegister) {
-
-        if (userRepository.existsByUsername(userRegister.getUsername())) {
-            return ResponseEntity.badRequest().body(new MessageResponseDto("Error: Username is already taken!"));
-        }
-
-        if (userRepository.existsByEmail(userRegister.getEmail())) {
-            return ResponseEntity.badRequest().body(new MessageResponseDto("Email is already taken!"));
-        }
-
-        // Create new user's account
-        User user = new User(userRegister.getUsername(), userRegister.getContactNo(), passwordEncoder.encode(userRegister.getPassword()), userRegister.getEmail(), userRegister.getUserType());
-
-        // Create new HashSet to store user Roles
-        Set<Role> roles = new HashSet<>();
-
-        // Role assigned
-        Role userRole = roleRepository.findByName(ERole.ROLE_DEFAULT).orElseThrow(() -> new RuntimeException("Error: Role is not found."));
-        roles.add(userRole);
-
-        // set all roles to user object
-        user.setRoles(roles);
-
-        // Save all user details into the database
-        userRepository.save(user);
-
-        // return success MSG to frontEnd user is registered successfully
-        return ResponseEntity.ok(new MessageResponseDto("User registered successfully!"));
-    }
-
-    // User authenticate and Login method
-    public ResponseEntity<?> authUserLogin(@Valid @RequestBody UserLoginDto userLoginDto) {
+    // Login User
+    public ResponseEntity<?> userLogin(@Valid @RequestBody UserLoginDto userLoginDto) {
 
         // Get username and password and create new AuthenticationToken
-        Authentication authentication = authenticationManager.authenticate(new UsernamePasswordAuthenticationToken(userLoginDto.getUsername(), userLoginDto.getPassword()));
+        Authentication authentication = authenticationManager.authenticate(
+                new UsernamePasswordAuthenticationToken(
+                        userLoginDto.getUsername(),
+                        userLoginDto.getPassword()
+                )
+        );
 
         // Set above assigned user credentials using Authentication object
         SecurityContextHolder.getContext().setAuthentication(authentication);
@@ -85,16 +66,63 @@ public class UserAdapterMongoImpl {
         String jwt = jwtUtils.generateJwtToken(authentication);
 
         // Then get authentication principles and set that UserDetailimpl object
-        UserDetailsModel userDetails = (UserDetailsModel) authentication.getPrincipal();
+        UserDetailsImpl userDetails = (UserDetailsImpl) authentication.getPrincipal();
 
         // Get getAuthorities and set to List object
-        List<String> roles = userDetails.getAuthorities().stream().map(item -> item.getAuthority()).collect(Collectors.toList());
+        List<String> roles = userDetails.getAuthorities().stream().map(item -> item.getAuthority())
+                .collect(Collectors.toList());
 
         // Return JWT response to FrontEnd
-        return ResponseEntity.ok(new JwtResponseDto(jwt, userDetails.getId(), userDetails.getUsername(), userDetails.getEmail(), roles));
+        return ResponseEntity.ok(new JwtResponseDto(jwt,
+                userDetails.getId(),
+                userDetails.getUsername(),
+                userDetails.getEmail(),
+                roles));
     }
 
-    public List<User> getAllUserDetails() {
+    // Register User
+    public ResponseEntity<?> registerUser(@Valid @RequestBody UserRegisterDto userRegister) {
+
+        if (userRepository.existsByUsername(userRegister.getUsername())) {
+            return ResponseEntity
+                    .badRequest()
+                    .body(new MessageResponseDto("Error: Username is already taken!"));
+        }
+
+        if (userRepository.existsByEmail(userRegister.getEmail())) {
+            return ResponseEntity
+                    .badRequest()
+                    .body(new MessageResponseDto("Email is already taken!"));
+        }
+
+        // New User Object
+        User user = new User(
+                userRegister.getUsername(),
+                userRegister.getEmail(),
+                userRegister.getContactNo(),
+                passwordEncoder.encode(userRegister.getPassword()),
+                userRegister.getUserType());
+
+        // Hashset for user Roles
+        Set<Role> roles = new HashSet<>();
+
+        // Default role assigned
+        Role userRole = roleRepository.findByName(ERole.ROLE_DEFAULT)
+                .orElseThrow(() -> new RuntimeException("Error: Role is not found."));
+        roles.add(userRole);
+
+        // set all roles to user object
+        user.setRoles(roles);
+
+        // Save into the database
+        userRepository.save(user);
+
+        // return success MSG to frontEnd user is registered successfully
+        return ResponseEntity.ok(new MessageResponseDto("User registered successfully!"));
+    }
+
+    // Get All Users
+    public List<User> getAllUsers() {
         return new ArrayList<>(userDetailsServiceImpl.getAllUserDetails());
     }
 }

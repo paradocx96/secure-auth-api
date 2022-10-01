@@ -1,16 +1,18 @@
-package com.ssd.dal.model;
-
-import com.fasterxml.jackson.annotation.JsonIgnore;
-import org.springframework.security.core.GrantedAuthority;
-import org.springframework.security.core.authority.SimpleGrantedAuthority;
-import org.springframework.security.core.userdetails.UserDetails;
+package com.ssd.dal.adapter;
 
 import java.util.Collection;
 import java.util.List;
 import java.util.Objects;
 import java.util.stream.Collectors;
 
-public class UserDetailsModel implements UserDetails {
+import org.springframework.security.core.GrantedAuthority;
+import org.springframework.security.core.authority.SimpleGrantedAuthority;
+import org.springframework.security.core.userdetails.UserDetails;
+
+import com.fasterxml.jackson.annotation.JsonIgnore;
+import com.ssd.dal.model.User;
+
+public class UserDetailsImpl implements UserDetails {
 
     private static final long serialVersionUID = 1L;
     private String id;
@@ -21,9 +23,12 @@ public class UserDetailsModel implements UserDetails {
     @JsonIgnore
     private String password;
 
+
     private Collection<? extends GrantedAuthority> authorities;
 
-    public UserDetailsModel(String id, String username, String contactNo, String email, String password, Collection<? extends GrantedAuthority> authorities) {
+    //Overloaded constructor
+    public UserDetailsImpl(String id, String username, String contactNo, String email, String password,
+                           Collection<? extends GrantedAuthority> authorities) {
         this.id = id;
         this.username = username;
         this.contactNo = contactNo;
@@ -32,12 +37,14 @@ public class UserDetailsModel implements UserDetails {
         this.authorities = authorities;
     }
 
-    public static UserDetailsModel build(User user) {
+    //Get user details and return new userDetailImple object
+    public static UserDetailsImpl build(User user) {
         List<SimpleGrantedAuthority> authorities = user.getRoles().stream()
                 .map(role -> new SimpleGrantedAuthority(role.getName().name()))
                 .collect(Collectors.toList());
 
-        return new UserDetailsModel(user.getId(),
+
+        return new UserDetailsImpl(user.getId(),
                 user.getUsername(),
                 user.getContactNo(),
                 user.getEmail(),
@@ -47,7 +54,7 @@ public class UserDetailsModel implements UserDetails {
 
     @Override
     public Collection<? extends GrantedAuthority> getAuthorities() {
-        return null;
+        return authorities;
     }
 
     @Override
@@ -60,9 +67,11 @@ public class UserDetailsModel implements UserDetails {
             return false;
         }
 
-        UserDetailsModel user = (UserDetailsModel) object;
+        UserDetailsImpl user = (UserDetailsImpl) object;
         return Objects.equals(id, user.id);
     }
+
+    //Getters and Setters
 
     public String getId() {
         return id;
@@ -78,31 +87,32 @@ public class UserDetailsModel implements UserDetails {
 
     @Override
     public String getPassword() {
-        return null;
+        return password;
     }
 
     @Override
     public String getUsername() {
-        return null;
+        return username;
     }
 
     @Override
     public boolean isAccountNonExpired() {
-        return false;
+        return true;
     }
 
     @Override
     public boolean isAccountNonLocked() {
-        return false;
+        return true;
     }
 
     @Override
     public boolean isCredentialsNonExpired() {
-        return false;
+        return true;
     }
 
     @Override
     public boolean isEnabled() {
-        return false;
+        return true;
     }
+
 }
