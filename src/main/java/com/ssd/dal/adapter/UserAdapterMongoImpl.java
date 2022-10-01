@@ -106,10 +106,22 @@ public class UserAdapterMongoImpl {
         // Hashset for user Roles
         Set<Role> roles = new HashSet<>();
 
-        // Default role assigned
-        Role userRole = roleRepository.findByName(ERole.ROLE_DEFAULT)
-                .orElseThrow(() -> new RuntimeException("Error: Role is not found."));
-        roles.add(userRole);
+        // Assign Role
+        if (userRegister.getUserType().equals("buyer")) {
+            Role userRole = roleRepository.findByName(ERole.ROLE_BUYER)
+                    .orElseThrow(() -> new RuntimeException("Error: Role is not found."));
+            roles.add(userRole);
+
+        } else if (userRegister.getUserType().equals("seller")) {
+            Role researcherRole = roleRepository.findByName(ERole.ROLE_SELLER)
+                    .orElseThrow(() -> new RuntimeException("Error: Role is not found."));
+            roles.add(researcherRole);
+
+        } else {
+            Role userRole = roleRepository.findByName(ERole.ROLE_DEFAULT)
+                    .orElseThrow(() -> new RuntimeException("Error: Role is not found."));
+            roles.add(userRole);
+        }
 
         // set all roles to user object
         user.setRoles(roles);
